@@ -2,32 +2,51 @@ import express, { Express, Request, Response } from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import connectDB from './config/db';
+
+// Routes Imports
+import authRoutes from './route/authRoutes';
 import bookRoutes from './route/bookRoutes';
+import borrowRoutes from './route/borrowRoutes';
 
-dotenv.config();
+// Middleware Imports
+import { notFound, errorHandler } from './middleware/errorMiddlewar';
 
-// Initialize App
+// 1. Config Setup
+dotenv.config(); // .env ෆයිල් එක කියවන්න
+
+// 2. Database Connection
+connectDB();
+
+// 3. Initialize App
 const app: Express = express();
 const PORT = process.env.PORT || 5000;
 
-// Database Connection
-connectDB();
+// 4. Middleware & CORS Setup
+// මෙතන තමයි ඔයාගේ frontend URL එක දෙන්නේ
+app.use(cors({
+  origin: 'http://localhost:5173', // Vite Frontend URL එක
+  credentials: true, // Cookies හෝ Authorization headers යවනවා නම් මේක ඕන
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], // අවසර දෙන මෙතඩ්ස්
+  allowedHeaders: ['Content-Type', 'Authorization'] // අවසර දෙන Headers
+}));
 
-// Middleware
-app.use(cors()); // Frontend එකට backend එක access කරන්න දෙනවා
-app.use(express.json()); // JSON data කියවන්න පුළුවන් කරනවා
+app.use(express.json()); // JSON දත්ත කියවන්න (Body Parser)
 
-// Routes Mount කිරීම
-// මෙතනින් තමයි ඔයාගේ API endpoints හඳුන්වලා දෙන්නේ
-app.use('/api/books', bookRoutes);
-// app.use('/api/auth', authRoutes); // Auth route එක හැදුවම මේක uncomment කරන්න
+// 5. Routes Mounting
+app.use('/api/auth', authRoutes);     // Login & Register
+app.use('/api/books', bookRoutes);    // Book CRUD
+app.use('/api/borrow', borrowRoutes); // Issue/Return Books
 
 // Root Route (Server එක වැඩද බලන්න)
 app.get('/', (req: Request, res: Response) => {
   res.send('Library Management System API is Running...');
 });
 
-// Server එක Start කිරීම
+// 6. Error Handling (අනිවාර්යයෙන්ම Routes වලට පස්සේ)
+app.use(notFound); // වැරදි URL
+app.use(errorHandler); // Server Errors
+
+// 7. Start Server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });

@@ -1,5 +1,5 @@
 import express from 'express';
-import { getUserNotifications, getOverdueBooks } from '../controllers/notificationController';
+import { getUserNotifications, getOverdueBooks } from '../controller/notificationController';
 import { protect, adminOnly } from '../middleware/authMiddleware';
 
 const router = express.Router();

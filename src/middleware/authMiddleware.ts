@@ -2,34 +2,31 @@ import { Request, Response, NextFunction } from 'express';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import User from '../model/User';
 
-// Request එකට 'user' property එක එකතු කරන්න Interface එකක්
 export interface AuthRequest extends Request {
   user?: any;
 }
 
+// 1. Login වෙලාද බලන Middleware
 export const protect = async (req: AuthRequest, res: Response, next: NextFunction) => {
   let token;
-
-  // Header එකේ "Bearer <token>" විදිහට තියෙනවද බලනවා
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+  if (req.headers.authorization?.startsWith('Bearer')) {
     try {
-      // "Bearer" වචනය අයින් කරලා Token එක විතරක් ගන්නවා
       token = req.headers.authorization.split(' ')[1];
-
-      // Token එක Verify කරනවා
       const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
-
-      // Token එකේ තියෙන ID එකෙන් User ව Database එකෙන් හොයාගන්නවා (Password අයින් කරලා)
       req.user = await User.findById(decoded.id).select('-password');
-
-      next(); // ඊළඟ function එකට යන්න
+      next();
     } catch (error) {
-      console.error(error);
       res.status(401).json({ message: 'Not authorized, token failed' });
     }
   }
+  if (!token) res.status(401).json({ message: 'Not authorized, no token' });
+};
 
-  if (!token) {
-    res.status(401).json({ message: 'Not authorized, no token' });
+// 2. Admin ද කියලා බලන Middleware
+export const adminOnly = (req: AuthRequest, res: Response, next: NextFunction) => {
+  if (req.user && req.user.role === 'admin') {
+    next();
+  } else {
+    res.status(403).json({ message: 'Not authorized as an admin' });
   }
 };

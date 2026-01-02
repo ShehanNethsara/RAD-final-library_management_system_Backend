@@ -1,65 +1,39 @@
 import { Request, Response } from 'express';
-import bcrypt from 'bcryptjs';
-import User, { IUser } from '../model/User';
-import generateToken from '../util/generateToken';
+import Borrow from '../model/Borrow';
+import Book from '../model/Book';
+import { AuthRequest } from '../middleware/authMiddleware';
 
-// @desc    Register a new user
-// @route   POST /api/auth/register
-export const registerUser = async (req: Request, res: Response) => {
+// 1. පොතක් Borrow කිරීම (දවස් 7ක් දෙනවා)
+export const borrowBook = async (req: AuthRequest, res: Response) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { bookId } = req.body;
+    const userId = req.user._id;
 
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      return res.status(400).json({ message: 'User already exists' });
+    // පොත තියෙනවද බලනවා
+    const book = await Book.findById(bookId);
+    if (!book || book.availableCopies < 1) {
+      return res.status(400).json({ message: 'Book not available' });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    // දවස් 7ක් එකතු කරන Logic එක
+    const borrowDate = new Date();
+    const dueDate = new Date();
+    dueDate.setDate(borrowDate.getDate() + 7); // අද ඉඳන් දවස් 7ක්
 
-    const user = await User.create({
-      name,
-      email,
-      password: hashedPassword,
-      role: role || 'member',
+    const borrow = await Borrow.create({
+      bookId,
+      userId,
+      borrowDate,
+      dueDate, // මෙතන save වෙනවා
+      status: 'Borrowed'
     });
 
-    if (user) {
-      res.status(201).json({
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        token: generateToken(user._id.toString(), user.role),
-      });
-    } else {
-      res.status(400).json({ message: 'Invalid user data' });
-    }
-  } catch (error) {
-    res.status(500).json({ message: (error as Error).message });
-  }
-};
+    // පොත් ගාන අඩු කරනවා
+    book.availableCopies -= 1;
+    await book.save();
 
-// @desc    Login user
-// @route   POST /api/auth/login
-export const loginUser = async (req: Request, res: Response) => {
-  try {
-    const { email, password } = req.body;
-
-    const user = await User.findOne({ email });
-
-    if (user && (await bcrypt.compare(password, user.password))) {
-      res.json({
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        token: generateToken(user._id.toString(), user.role),
-      });
-    } else {
-      res.status(401).json({ message: 'Invalid email or password' });
-    }
-  } catch (error) {
-    res.status(500).json({ message: (error as Error).message });
+    res.status(201).json(borrow);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
   }
 };

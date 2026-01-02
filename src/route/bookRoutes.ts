@@ -1,29 +1,15 @@
 import express from 'express';
-import {
-  getBooks,
-  getBookById,
-  createBook,
-  updateBook,
-  deleteBook,
-} from '../controller/bookController';
-import { protect } from '../middleware/authMiddleware';
-import { admin } from '../middleware/roleMiddleware';
+import { createBook, getBooks, updateBook, deleteBook } from '../controller/bookController';
+import { protect, adminOnly } from '../middleware/authMiddleware';
 
 const router = express.Router();
 
-// හැමෝටම පොත් ලිස්ට් එක බලන්න පුළුවන් (Public)
-router.get('/', getBooks);
+// ඕනෑම කෙනෙක්ට පොත් බලන්න පුළුවන් (Login වෙලා ඉන්න ඕන)
+router.get('/', protect, getBooks);
 
-// තනි පොතක් බලන්න (Public)
-router.get('/:id', getBookById);
-
-// පොත් ඇතුලත් කරන්න (Admin Only)
-router.post('/', protect, admin, createBook);
-
-// පොත් වල විස්තර වෙනස් කරන්න (Admin Only)
-router.put('/:id', protect, admin, updateBook);
-
-// පොත් ඉවත් කරන්න (Admin Only)
-router.delete('/:id', protect, admin, deleteBook);
+// Admin ට විතරයි කරන්න පුළුවන් දේවල්
+router.post('/', protect, adminOnly, createBook);
+router.put('/:id', protect, adminOnly, updateBook);
+router.delete('/:id', protect, adminOnly, deleteBook);
 
 export default router;

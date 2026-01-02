@@ -1,39 +1,32 @@
 import { Request, Response } from 'express';
-import { Book } from '../model/Library';
+import Book from '../model/Book';
 
-// Admin: පොතක් ඇතුළත් කිරීම
-export const addBook = async (req: Request, res: Response) => {
-    try {
-        const newBook = new Book(req.body);
-        await newBook.save();
-        res.status(201).json(newBook);
-    } catch (error) {
-        res.status(400).json({ error: "පොත ඇතුළත් කිරීම අසාර්ථකයි." });
-    }
+// Get Books (Public)
+export const getBooks = async (req: Request, res: Response) => {
+  const books = await Book.find();
+  res.json(books);
 };
 
-// Admin: පොතක විස්තර යාවත්කාලීන කිරීම
+// Add Book (Admin Only)
+export const createBook = async (req: Request, res: Response) => {
+  const { title, author, isbn, category, totalCopies } = req.body;
+  const book = await Book.create({
+    title, author, isbn, category, 
+    totalCopies, availableCopies: totalCopies
+  });
+  res.status(201).json(book);
+};
+
+// Update Book (Admin Only)
 export const updateBook = async (req: Request, res: Response) => {
-    try {
-        const updatedBook = await Book.findByIdAndUpdate(req.params.id, req.body, { new: true });
-        res.json(updatedBook);
-    } catch (error) {
-        res.status(400).json({ error: "යාවත්කාලීන කිරීම අසාර්ථකයි." });
-    }
+  const book = await Book.findByIdAndUpdate(req.params.id, req.body, { new: true });
+  if (!book) return res.status(404).json({ message: 'Book not found' });
+  res.json(book);
 };
 
-// Admin: පොතක් ඉවත් කිරීම
+// Delete Book (Admin Only)
 export const deleteBook = async (req: Request, res: Response) => {
-    try {
-        await Book.findByIdAndDelete(req.params.id);
-        res.json({ message: "පොත ඉවත් කරන ලදී." });
-    } catch (error) {
-        res.status(400).json({ error: "ඉවත් කිරීම අසාර්ථකයි." });
-    }
-};
-
-// User: සියලුම පොත් බැලීම
-export const getAllBooks = async (req: Request, res: Response) => {
-    const books = await Book.find();
-    res.json(books);
+  const book = await Book.findByIdAndDelete(req.params.id);
+  if (!book) return res.status(404).json({ message: 'Book not found' });
+  res.json({ message: 'Book removed' });
 };

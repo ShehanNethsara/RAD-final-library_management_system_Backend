@@ -1,135 +1,133 @@
 import { Request, Response } from 'express';
-import Borrow from '../model/Borrow';
+import asyncHandler from 'express-async-handler';
+import Borrow from '../model/Borrow'; 
 import Book from '../model/Book';
-import { AuthRequest } from '../middleware/authMiddleware'; // User ID එක ගන්න මේක ඕන
+import { AuthRequest } from '../middleware/authMiddleware';
 
-// @desc    Borrow a book (Set Due Date to 7 days later)
+// @desc    Borrow a book
 // @route   POST /api/borrow
-// @access  Private (User/Admin)
-export const borrowBook = async (req: AuthRequest, res: Response) => {
-  try {
-    const { bookId } = req.body;
-    const userId = req.user._id; // Login වෙලා ඉන්න User ගේ ID එක
+// @access  Private (User)
+export const borrowBook = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { bookId, dueDate } = req.body;
+  
+  // TypeScript වලට කියනවා _id එක string එකක් විදිහට ගන්න කියලා
+  const userId = req.user._id; 
 
-    // 1. පොත සිස්ටම් එකේ තියෙනවද බලනවා
-    const book = await Book.findById(bookId);
+  // 1. පොත තියෙනවද බලනවා
+  const book = await Book.findById(bookId);
 
-    if (!book) {
-      return res.status(404).json({ message: 'Book not found' });
-    }
+  if (!book) {
+    res.status(404);
+    throw new Error('Book not found');
+  }
 
-    // 2. පොතේ පිටපත් (Copies) ඉතුරු වෙලා තියෙනවද බලනවා
-    if (book.availableCopies < 1) {
-      return res.status(400).json({ message: 'Book is currently out of stock' });
-    }
+  // 2. Stock තියෙනවද බලනවා
+  if (book.availableCopies < 1) {
+    res.status(400);
+    throw new Error('Book is currently out of stock');
+  }
 
-    // 3. User දැනටමත් මේ පොත අරගෙනද බලනවා (Optional Validation)
-    const alreadyBorrowed = await Borrow.findOne({ 
-      userId, 
-      bookId, 
-      status: 'Borrowed' 
-    });
+  // 3. දැනටමත් අරගෙනද බලනවා
+  const alreadyBorrowed = await Borrow.findOne({
+    userId: userId, 
+    bookId: bookId, 
+    status: 'Borrowed',
+  });
 
-    if (alreadyBorrowed) {
-      return res.status(400).json({ message: 'You have already borrowed this book' });
-    }
+  if (alreadyBorrowed) {
+    res.status(400);
+    throw new Error('You have already borrowed this book');
+  }
 
-    // 4. දින 7ක් එකතු කිරීමේ Logic එක (Due Date Calculation)
-    const borrowDate = new Date();
-    const dueDate = new Date();
-    dueDate.setDate(borrowDate.getDate() + 7); // අද ඉඳන් දවස් 7ක් ඉස්සරහට
+  // 4. Due Date හැදීම
+  let finalDueDate = dueDate;
+  if (!finalDueDate) {
+    const d = new Date();
+    d.setDate(d.getDate() + 7); 
+    finalDueDate = d;
+  }
 
-    // 5. Borrow Record එක Database එකේ Save කරනවා
-    const borrow = await Borrow.create({
-      bookId,
-      userId,
-      borrowDate,
-      dueDate,
-      status: 'Borrowed'
-    });
+  // 5. Save Record
+  const borrow = await Borrow.create({
+    userId: userId,
+    bookId: bookId,
+    dueDate: finalDueDate,
+    status: 'Borrowed'
+  });
 
-    // 6. පොතේ available copy ගාන එකකින් අඩු කරනවා
+  // 6. Update Book Stock
+  if (borrow) {
     book.availableCopies = book.availableCopies - 1;
     await book.save();
-
+    
     res.status(201).json({
       message: 'Book borrowed successfully',
-      dueDate: dueDate, // Frontend එකට Due Date එක යවනවා පෙන්නන්න ලේසි වෙන්න
       borrow
     });
-
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  } else {
+    res.status(400);
+    throw new Error('Invalid borrow data');
   }
-};
+});
 
 // @desc    Return a book
 // @route   PUT /api/borrow/return/:id
-// @access  Private (Usually Admin or User via System)
-export const returnBook = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params; // Borrow Record ID (not Book ID)
+// @access  Private
+export const returnBook = asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
 
-    // 1. Borrow Record එක හොයාගන්නවා
-    const borrow = await Borrow.findById(id);
+  const borrow = await Borrow.findById(id);
 
-    if (!borrow) {
-      return res.status(404).json({ message: 'Borrow record not found' });
-    }
-
-    // 2. දැනටමත් භාරදීලා නම් Error එකක් දෙනවා
-    if (borrow.status === 'Returned') {
-      return res.status(400).json({ message: 'Book already returned' });
-    }
-
-    // 3. Return Date එක සහ Status Update කරනවා
-    borrow.status = 'Returned';
-    borrow.returnDate = new Date();
-    await borrow.save();
-
-    // 4. පොතේ Stock එක ආපහු වැඩි කරනවා
-    const book = await Book.findById(borrow.bookId);
-    if (book) {
-      book.availableCopies = book.availableCopies + 1;
-      await book.save();
-    }
-
-    res.json({ message: 'Book returned successfully' });
-
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  if (!borrow) {
+    res.status(404);
+    throw new Error('Borrow record not found');
   }
-};
 
-// @desc    Get logged in user's borrow history
-// @route   GET /api/borrow/my
-// @access  Private (User)
-export const getMyBorrows = async (req: AuthRequest, res: Response) => {
-  try {
-    // තමන්ගේ ID එකට අදාල Borrow list එක ගන්නවා (Book විස්තරත් එක්කම populate කරලා)
-    const borrows = await Borrow.find({ userId: req.user._id })
-      .populate('bookId', 'title author isbn') // පොතේ නම සහ කර්තෘ පෙන්වන්න
-      .sort({ createdAt: -1 }); // අලුත් ඒවා උඩින්
-
-    res.json(borrows);
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  if (borrow.status === 'Returned') {
+    res.status(400);
+    throw new Error('Book already returned');
   }
-};
 
-// @desc    Get all borrows (For Admin Dashboard)
+  // --- නිවැරදි කළ කොටස ---
+  borrow.status = 'Returned';
+  borrow.returnDate = new Date(); // මෙතන returnedDate වෙනුවට returnDate දැම්මා
+  await borrow.save();
+  // ------------------------
+
+  // Update Book Stock
+  // (borrow as any) දාලා තියෙන්නේ TypeScript error එක නවත්තන්න
+  const book = await Book.findById((borrow as any).bookId); 
+  
+  if (book) {
+    book.availableCopies = book.availableCopies + 1;
+    await book.save();
+  }
+
+  res.json({ message: 'Book returned successfully' });
+});
+
+// @desc    Get user's borrowed books
 // @route   GET /api/borrow
-// @access  Private (Admin)
-export const getAllBorrows = async (req: Request, res: Response) => {
-  try {
-    // ඔක්කොම විස්තර ගන්නවා User සහ Book විස්තරත් එක්ක
-    const borrows = await Borrow.find({})
-      .populate('userId', 'name email')
-      .populate('bookId', 'title')
-      .sort({ createdAt: -1 });
+// @access  Private
+// src/controllers/borrowController.ts
 
-    res.json(borrows);
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
-  }
-};
+export const getMyBorrows = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const borrows = await Borrow.find({ userId: req.user._id })
+    .populate('bookId', 'title author imageUrl isbn') 
+    .populate('userId', 'name email') // <--- මේක අලුතින් එකතු කළා (User ගේ නම සහ Email ගන්න)
+    .sort({ createdAt: -1 });
+
+  res.json(borrows);
+});
+
+// @desc    Get all borrows (Admin)
+// @route   GET /api/borrow/all
+// @access  Private (Admin)
+export const getAllBorrows = asyncHandler(async (req: Request, res: Response) => {
+  const borrows = await Borrow.find({})
+    .populate('userId', 'name email')
+    .populate('bookId', 'title author')
+    .sort({ createdAt: -1 });
+
+  res.json(borrows);
+});

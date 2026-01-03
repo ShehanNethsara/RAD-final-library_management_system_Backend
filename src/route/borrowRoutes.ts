@@ -1,11 +1,17 @@
 import express from 'express';
-// කලින් දුන්න borrowController එක මෙතනට import කරන්න
-import { borrowBook } from '../controller/borrowController'; 
+// borrowBook, getMyBorrows සහ returnBook කියන තුනම import කරගන්න
+import { borrowBook, getMyBorrows, returnBook } from '../controller/borrowController'; 
 import { protect } from '../middleware/authMiddleware';
 
 const router = express.Router();
 
-// පොත් ගන්න (User & Admin පුළුවන්) - දවස් 7 Logic එක තියෙන්නේ borrowBook function එක ඇතුලේ
-router.post('/', protect, borrowBook);
+// --- Main Borrow Routes (/) ---
+router.route('/')
+  .post(protect, borrowBook)    // POST: පොතක් ගන්න (Borrow)
+  .get(protect, getMyBorrows);  // GET:  මම ගත්ත පොත් ටික බලන්න (My Borrows History)
+
+// --- Return Book Route (/return/:id) ---
+// PUT: පොතක් ආපහු භාර දෙනකොට (Id එක විදිහට එන්නේ Borrow Record ID එක)
+router.put('/return/:id', protect, returnBook);
 
 export default router;

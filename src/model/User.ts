@@ -1,17 +1,22 @@
-import mongoose, { Schema, Document } from 'mongoose';
+// src/models/User.ts
 
-export interface IUser extends Document {
-  name: string;
-  email: string;
-  password: string;
-  role: 'admin' | 'user'; // Role based access සඳහා
-}
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 
-const UserSchema: Schema = new Schema({
+const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  role: { type: String, enum: ['admin', 'user'], default: 'user' },
+  
+  // කලින් තිබුනේ මේක විතරයි
+  isAdmin: { type: Boolean, required: true, default: false },
+
+  // අලුතින් මේක එකතු කරන්න (ඔයාගේ data වල role field එකක් තියෙන නිසා)
+  role: { type: String, default: 'user' }, 
+
 }, { timestamps: true });
 
-export default mongoose.model<IUser>('User', UserSchema);
+// ... (ඉතුරු කෝඩ් එහෙම්ම තියන්න)
+
+const User = mongoose.model('User', userSchema);
+export default User;

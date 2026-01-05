@@ -10,4 +10,3 @@ This is the backend API for **LibFlow**, a modern Library Management System buil
 - **JWT (JsonWebToken)** - Authentication
 - **Multer** - Image uploads
 
-## 📂 Project Structure

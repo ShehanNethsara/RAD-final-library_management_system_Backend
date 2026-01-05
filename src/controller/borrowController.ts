@@ -86,3 +86,13 @@ export const returnBook = asyncHandler(async (req: any, res: Response) => {
 
   res.json({ message: 'Book returned successfully' });
 });
+
+export const getAllBorrows = asyncHandler(async (req: any, res: Response) => {
+  // Borrow ඔක්කොම අරන්, User සහ Book විස්තරත් එක්ක සම්බන්ධ (populate) කරනවා
+  const borrows = await Borrow.find({})
+    .populate('user', 'name email') // User ගේ නම සහ ඊමේල් එක
+    .populate('book', 'title author imageUrl') // පොතේ විස්තර
+    .sort({ createdAt: -1 }); // අලුත්ම ඒවා උඩට
+    
+  res.json(borrows);
+});

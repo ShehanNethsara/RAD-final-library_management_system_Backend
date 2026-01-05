@@ -1,8 +1,7 @@
 import multer from 'multer';
 import path from 'path';
-import fs from 'fs'; // <--- මේක අලුතින් එකතු කළා
+import fs from 'fs'; 
 
-// Uploads folder එක තිබේදැයි බලා, නැත්නම් සාදාගැනීම
 const uploadDir = 'uploads/';
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir);

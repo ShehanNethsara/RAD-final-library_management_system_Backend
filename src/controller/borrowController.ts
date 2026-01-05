@@ -3,9 +3,7 @@ import asyncHandler from 'express-async-handler';
 import Borrow from '../model/Borrow';
 import Book from '../model/Book';
 
-// @desc    Borrow a book
-// @route   POST /api/borrows/:bookId
-// @access  Private
+
 export const borrowBook = asyncHandler(async (req: any, res: Response) => {
   const { bookId } = req.params;
   const userId = req.user._id;
@@ -44,9 +42,7 @@ export const borrowBook = asyncHandler(async (req: any, res: Response) => {
   res.status(201).json(borrow);
 });
 
-// @desc    Get logged in user's borrows
-// @route   GET /api/borrows/my-borrows
-// @access  Private
+
 export const getMyBorrows = asyncHandler(async (req: any, res: Response) => {
   const borrows = await Borrow.find({ user: req.user._id })
     .populate('book', 'title author imageUrl')
@@ -55,10 +51,6 @@ export const getMyBorrows = asyncHandler(async (req: any, res: Response) => {
   res.json(borrows);
 });
 
-// @desc    Return a borrowed book
-// @route   PUT /api/borrows/:borrowId/return
-// @access  Private
-// --- මේ කොටස තමයි කලින් අඩු වෙලා තිබුණේ ---
 export const returnBook = asyncHandler(async (req: any, res: Response) => {
   const { borrowId } = req.params;
 
@@ -88,11 +80,10 @@ export const returnBook = asyncHandler(async (req: any, res: Response) => {
 });
 
 export const getAllBorrows = asyncHandler(async (req: any, res: Response) => {
-  // Borrow ඔක්කොම අරන්, User සහ Book විස්තරත් එක්ක සම්බන්ධ (populate) කරනවා
   const borrows = await Borrow.find({})
-    .populate('user', 'name email') // User ගේ නම සහ ඊමේල් එක
-    .populate('book', 'title author imageUrl') // පොතේ විස්තර
-    .sort({ createdAt: -1 }); // අලුත්ම ඒවා උඩට
+    .populate('user', 'name email') 
+    .populate('book', 'title author imageUrl') 
+    .sort({ createdAt: -1 });
     
   res.json(borrows);
 });

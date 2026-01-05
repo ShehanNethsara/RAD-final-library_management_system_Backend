@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
-// sv notification model එකක් හදනවා
+// sv notification 
 
 export interface INotification extends Document {
   userId: mongoose.Types.ObjectId;

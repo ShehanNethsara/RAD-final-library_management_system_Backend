@@ -10,7 +10,6 @@ const generateToken = (id: string) => {
   });
 };
 
-// @desc    Register a new user
 export const registerUser = asyncHandler(async (req: Request, res: Response) => {
   const { name, email, password } = req.body;
 
@@ -39,7 +38,6 @@ export const registerUser = asyncHandler(async (req: Request, res: Response) => 
       email: user.email,
       role: user.role,
       isAdmin: user.isAdmin,
-      // --- වෙනස් කළ තැන 1: .toString() භාවිතා කිරීම ---
       token: generateToken(user._id.toString()), 
     });
   } else {
@@ -48,7 +46,6 @@ export const registerUser = asyncHandler(async (req: Request, res: Response) => 
   }
 });
 
-// @desc    Auth user & get token (Login)
 export const authUser = asyncHandler(async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
@@ -61,7 +58,6 @@ export const authUser = asyncHandler(async (req: Request, res: Response) => {
       email: user.email,
       role: user.role,
       isAdmin: user.isAdmin,
-      // --- වෙනස් කළ තැන 2: .toString() භාවිතා කිරීම ---
       token: generateToken(user._id.toString()), 
     });
   } else {
@@ -70,7 +66,7 @@ export const authUser = asyncHandler(async (req: Request, res: Response) => {
   }
 });
 
-// @desc    Get all users (Admin only)
+//  Get all users 
 export const getAllUsers = asyncHandler(async (req: Request, res: Response) => {
   const users = await User.find({}).select('-password').sort({ createdAt: -1 });
   res.json(users);

@@ -7,13 +7,12 @@ export interface IBook extends Document {
   category: string;
   totalCopies: number;
   availableCopies: number;
-  // අලුත් Features
-  imageUrl?: string;      // පොතේ පින්තූරය (Optional)
-  description?: string;   // විස්තරය
-  publisher?: string;     // ප්‍රකාශකයා
-  publishedYear?: number; // අවුරුද්ද
-  language?: string;      // භාෂාව
-  shelfLocation?: string; // රාක්කයේ අංකය
+  imageUrl?: string;      
+  description?: string;   
+  publisher?: string;     
+  publishedYear?: number; 
+  language?: string;      
+  shelfLocation?: string; 
 }
 
 const BookSchema: Schema = new Schema({
@@ -24,7 +23,6 @@ const BookSchema: Schema = new Schema({
   totalCopies: { type: Number, required: true, default: 1 },
   availableCopies: { type: Number, required: true, default: 1 },
   
-  // අලුත් Features Add කළා
   imageUrl: { type: String, default: '' }, 
   description: { type: String, default: '' },
   publisher: { type: String, default: '' },

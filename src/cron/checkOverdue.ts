@@ -3,26 +3,25 @@ import Borrow from '../model/Borrow';
 import sendEmail from '../util/sendEmail';
 
 const checkOverdueBooks = () => {
-  // හැමදාම උදේ 9:00 ට මේක Run වෙනවා ('0 9 * * *')
   cron.schedule('0 9 * * *', async () => {
     console.log('Running Overdue Check...');
 
     try {
       const currentDate = new Date();
 
-      // Return නොකරපු (Borrowed) සහ දින පහු වුන (dueDate < now) පොත් හොයනවා
+      // Return nokarapu poth hoynwa
       const overdueBorrows = await Borrow.find({
         status: 'Borrowed',
         dueDate: { $lt: currentDate }
-      }).populate('user', 'email name') // User ගේ Email එක ඕන නිසා
-        .populate('book', 'title');     // පොතේ නම ඕන නිසා
+      }).populate('user', 'email name') 
+        .populate('book', 'title');     
 
       if (overdueBorrows.length === 0) {
         console.log('No overdue books found.');
         return;
       }
 
-      // හැම overdue පොතකටම Email එකක් යවනවා
+      //  overdue book ekta Email ywnna
       for (const borrow of overdueBorrows) {
         const user: any = borrow.user;
         const book: any = borrow.book;

@@ -1,4 +1,3 @@
-// --- වෙනස් කළ තැන: 'mongoose' වලින් import කරන්න ---
 import mongoose, { Document, Schema } from 'mongoose'; 
 
 export interface IBorrow extends Document {

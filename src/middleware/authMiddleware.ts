@@ -3,8 +3,6 @@ import { Request, Response, NextFunction } from 'express';
 import asyncHandler from 'express-async-handler';
 import User from '../model/User';
 
-// 1. මෙතන තමයි අපි අලුත් Interface එක හදන්නේ
-// මේකෙන් අපි කියනවා Request එක ඇතුලේ 'user' කියලා කෑල්ලක් තියෙනවා කියලා.
 export interface AuthRequest extends Request {
   user?: any; 
 }
@@ -38,14 +36,10 @@ const protect = asyncHandler(async (req: AuthRequest, res: Response, next: NextF
   }
 });
 
-// Admin Middleware
-// src/middleware/authMiddleware.ts
 
 const adminOnly = (req: AuthRequest, res: Response, next: NextFunction) => {
-  // Debug කරන්න මේ console log එක උදව් වෙයි
   console.log("User Info in Backend:", req.user);
 
-  // දැන් අපි check කරනවා 'isAdmin' field එක හෝ 'role' field එක
   if (req.user && (req.user.isAdmin === true || req.user.role === 'admin')) {
     next();
   } else {

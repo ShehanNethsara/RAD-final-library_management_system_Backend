@@ -1,5 +1,5 @@
 import { Response, NextFunction } from 'express';
-import { AuthRequest } from './authMiddleware'; // AuthMiddleware එකෙන් type එක ගන්න
+import { AuthRequest } from './authMiddleware'; 
 
 export const adminOnly = (req: AuthRequest, res: Response, next: NextFunction) => {
   if (req.user && req.user.role === 'admin') {

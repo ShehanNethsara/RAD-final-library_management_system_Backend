@@ -1,19 +1,14 @@
 import { Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
-import Book from '../model/Book'; // ඔයාගේ Model folder එක 'models' ද 'model' ද කියලා බලන්න
+import Book from '../model/Book';
 
-// @desc    Get all books
-// @route   GET /api/books
-// @access  Public
+
 export const getBooks = asyncHandler(async (req: Request, res: Response) => {
-  // අලුත්ම පොත් උඩින් එන්න (createdAt: -1)
   const books = await Book.find().sort({ createdAt: -1 });
   res.json(books);
 });
 
-// @desc    Add a new book (with Image Upload)
-// @route   POST /api/books
-// @access  Private/Admin
+
 export const createBook = asyncHandler(async (req: any, res: Response) => {
   const { 
     title, 
@@ -28,33 +23,29 @@ export const createBook = asyncHandler(async (req: any, res: Response) => {
     shelfLocation 
   } = req.body;
 
-  // 1. ISBN එක කලින් තියෙනවද බලනවා (Validation)
   const bookExists = await Book.findOne({ isbn });
   if (bookExists) {
     res.status(400);
     throw new Error('Book with this ISBN already exists');
   }
 
-  // 2. Image URL එක සකස් කරගැනීම
   let imageUrl = '';
   
   if (req.file) {
-    // File එකක් Upload වුනා නම්, Server URL එක හදනවා
     imageUrl = `http://localhost:5000/uploads/${req.file.filename}`;
   } else if (req.body.imageUrl) {
-    // File එකක් නැතුව Link එකක් විතරක් දැම්මොත්
     imageUrl = req.body.imageUrl;
   }
 
-  // 3. පොත Database එකේ Save කිරීම
+  // book db sv krnwa
   const book = await Book.create({
     title, 
     author, 
     isbn, 
     category, 
     totalCopies: Number(totalCopies), 
-    availableCopies: Number(totalCopies), // මුලින්ම available ගාණ total ගාණමයි
-    imageUrl, // හදාගත්තු Image URL එක
+    availableCopies: Number(totalCopies), 
+    imageUrl, 
     description, 
     publisher, 
     publishedYear, 
@@ -70,9 +61,7 @@ export const createBook = asyncHandler(async (req: any, res: Response) => {
   }
 });
 
-/// @desc    Update a book
-// @route   PUT /api/books/:id
-// @access  Private/Admin
+
 export const updateBook = asyncHandler(async (req: any, res: Response) => {
   const { 
     title, author, isbn, category, totalCopies, availableCopies, shelfLocation 
@@ -87,13 +76,11 @@ export const updateBook = asyncHandler(async (req: any, res: Response) => {
     book.category = category || book.category;
     book.shelfLocation = shelfLocation || book.shelfLocation;
     
-    // --- Image Update Logic ---
+    // Image Update  
     if (req.file) {
-      // අලුත් පින්තූරයක් Upload කළොත් URL එක මාරු වෙනවා
       book.imageUrl = `http://localhost:5000/uploads/${req.file.filename}`;
     }
     
-    // Copies Update Logic
     if (totalCopies !== undefined) book.totalCopies = Number(totalCopies);
     if (availableCopies !== undefined) book.availableCopies = Number(availableCopies);
 
@@ -105,9 +92,7 @@ export const updateBook = asyncHandler(async (req: any, res: Response) => {
   }
 });
 
-// @desc    Delete a book
-// @route   DELETE /api/books/:id
-// @access  Private/Admin
+
 export const deleteBook = asyncHandler(async (req: Request, res: Response) => {
   const book = await Book.findById(req.params.id);
 

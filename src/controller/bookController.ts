@@ -70,12 +70,12 @@ export const createBook = asyncHandler(async (req: any, res: Response) => {
   }
 });
 
-// @desc    Update a book
+/// @desc    Update a book
 // @route   PUT /api/books/:id
 // @access  Private/Admin
-export const updateBook = asyncHandler(async (req: Request, res: Response) => {
+export const updateBook = asyncHandler(async (req: any, res: Response) => {
   const { 
-    title, author, isbn, category, totalCopies, availableCopies, imageUrl, shelfLocation 
+    title, author, isbn, category, totalCopies, availableCopies, shelfLocation 
   } = req.body;
 
   const book = await Book.findById(req.params.id);
@@ -85,10 +85,15 @@ export const updateBook = asyncHandler(async (req: Request, res: Response) => {
     book.author = author || book.author;
     book.isbn = isbn || book.isbn;
     book.category = category || book.category;
-    book.imageUrl = imageUrl || book.imageUrl; // මෙතනත් ඕන නම් File Upload logic දාන්න පුළුවන් පස්සේ
     book.shelfLocation = shelfLocation || book.shelfLocation;
     
-    // --- මේ කොටස අනිවාර්යයි (Copies update වීම සඳහා) ---
+    // --- Image Update Logic ---
+    if (req.file) {
+      // අලුත් පින්තූරයක් Upload කළොත් URL එක මාරු වෙනවා
+      book.imageUrl = `http://localhost:5000/uploads/${req.file.filename}`;
+    }
+    
+    // Copies Update Logic
     if (totalCopies !== undefined) book.totalCopies = Number(totalCopies);
     if (availableCopies !== undefined) book.availableCopies = Number(availableCopies);
 

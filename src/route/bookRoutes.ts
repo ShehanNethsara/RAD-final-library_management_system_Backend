@@ -1,14 +1,15 @@
 import express from 'express';
 import { getBooks, createBook, updateBook, deleteBook } from '../controller/bookController';
 import { protect, adminOnly } from '../middleware/authMiddleware';
+import { upload } from '../middleware/uploadMiddleware'; // <--- Import කරන්න
 
 const router = express.Router();
 
-// --- වෙනස් කළ තැන (මෙතන protect තිබුණා නම් අයින් කරන්න) ---
-router.get('/', getBooks); // හැමෝටම පොත් බලන්න පුළුවන් (Public)
+router.get('/', getBooks);
 
-// මේවාට Admin අවසරය ඕන
-router.post('/', protect, adminOnly, createBook);
+// --- වෙනස් කළ තැන: upload.single('image') මැදට දැම්මා ---
+router.post('/', protect, adminOnly, upload.single('image'), createBook);
+
 router.put('/:id', protect, adminOnly, updateBook);
 router.delete('/:id', protect, adminOnly, deleteBook);
 

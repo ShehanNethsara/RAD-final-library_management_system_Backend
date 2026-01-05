@@ -8,6 +8,7 @@ import authRoutes from './route/authRoutes';
 import bookRoutes from './route/bookRoutes';
 import borrowRoutes from './route/borrowRoutes'; // <--- 1. මේක අනිවාර්යයි
 import checkOverdueBooks from './cron/checkOverdue';
+import path from 'path';
 
 dotenv.config();
 connectDB();
@@ -29,6 +30,8 @@ app.use('/api/books', bookRoutes);
 app.use('/api/borrows', borrowRoutes); // <--- 2. මේ පේළිය නැත්නම් Borrow වැඩ කරන්නේ නෑ
 
 const PORT = process.env.PORT || 5000;
-
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+const dirname = path.resolve();
+app.use('/uploads', express.static(path.join(dirname, '/uploads')));
 

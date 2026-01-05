@@ -11,5 +11,6 @@ router.get('/', protect, getBooks);
 router.post('/', protect, adminOnly, createBook);
 router.put('/:id', protect, adminOnly, updateBook);
 router.delete('/:id', protect, adminOnly, deleteBook);
+router.put('/:id', protect, adminOnly, updateBook);
 
 export default router;

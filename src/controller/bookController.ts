@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import Book from '../model/Book';
 import { AuthRequest } from '../middleware/authMiddleware';
+import asyncHandler from 'express-async-handler'
 
 // Get Books (Public)
 // Search ෆිල්ටර් එකක් දාලා තියෙන්නේ, පස්සේ ඕන වෙයි.
@@ -56,34 +57,36 @@ export const createBook = async (req: AuthRequest, res: Response) => {
   }
 };
 
+////
 // Update Book (Admin Only) - Updated
-export const updateBook = async (req: Request, res: Response) => {
+// @desc    Update a book
+// @route   PUT /api/books/:id
+// @access  Private/Admin
+export const updateBook = asyncHandler(async (req: Request, res: Response) => {
+  const { title, author, isbn, category, totalCopies, availableCopies, imageUrl, shelfLocation } = req.body;
+
   const book = await Book.findById(req.params.id);
 
   if (book) {
-    book.title = req.body.title || book.title;
-    book.author = req.body.author || book.author;
-    book.isbn = req.body.isbn || book.isbn;
-    book.category = req.body.category || book.category;
-    book.totalCopies = req.body.totalCopies || book.totalCopies;
+    book.title = title || book.title;
+    book.author = author || book.author;
+    book.isbn = isbn || book.isbn;
+    book.category = category || book.category;
+    book.imageUrl = imageUrl || book.imageUrl;
+    book.shelfLocation = shelfLocation || book.shelfLocation;
     
-    // අලුත් දත්ත ටික Update කරනවා
-    book.imageUrl = req.body.imageUrl || book.imageUrl;
-    book.description = req.body.description || book.description;
-    book.publisher = req.body.publisher || book.publisher;
-    book.publishedYear = req.body.publishedYear || book.publishedYear;
-    book.language = req.body.language || book.language;
-    book.shelfLocation = req.body.shelfLocation || book.shelfLocation;
+    // --- මෙන්න මේ කොටස් දෙක අනිවාර්යයෙන්ම තියෙන්න ඕන ---
+    // අංකයක් එනවා නම් ඒක ගන්න, නැත්නම් පරණ එකම තියන්න
+    if (totalCopies !== undefined) book.totalCopies = Number(totalCopies);
+    if (availableCopies !== undefined) book.availableCopies = Number(availableCopies);
 
-    // Total copies වෙනස් වුනොත් available ගාණත් හදන්න ඕන Logic එකක් පස්සේ දාන්න පුළුවන්.
-    // දැනට අපි කෙලින්ම save කරමු.
-    
     const updatedBook = await book.save();
     res.json(updatedBook);
   } else {
-    res.status(404).json({ message: 'Book not found' });
+    res.status(404);
+    throw new Error('Book not found');
   }
-};
+});
 
 // Delete Book (Admin Only)
 export const deleteBook = async (req: Request, res: Response) => {

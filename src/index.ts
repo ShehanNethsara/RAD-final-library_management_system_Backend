@@ -1,39 +1,34 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import connectDB from './config/db'; // .js අයින් කළා
+import connectDB from './config/db';
 
-// වැදගත්: ඔයාගේ folder එකේ නම 'routes' ද 'route' ද කියලා බලන්න.
-// මම මෙතන දාලා තියෙන්නේ 'routes' (plural) විදිහට.
-import authRoutes from './route/authRoutes'; // .js අයින් කළා
-import bookRoutes from './route/bookRoutes'; // .js අයින් කළා
-import borrowRoutes from './route/borrowRoutes'; // .js අයින් කළා
-
-import { notFound, errorHandler } from './middleware/errorMiddlewar'; // .js අයින් කළා
+// Routes Imports (මේ ෆයිල් තුනම import කරගන්න)
+import authRoutes from './route/authRoutes';
+import bookRoutes from './route/bookRoutes';
+import borrowRoutes from './route/borrowRoutes'; // <--- 1. මේක අනිවාර්යයි
+import checkOverdueBooks from './cron/checkOverdue';
 
 dotenv.config();
 connectDB();
-
+checkOverdueBooks();
 const app = express();
-const PORT = process.env.PORT || 5000;
 
-app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174'],
-  credentials: true
-}));
-
+app.use(cors());
 app.use(express.json());
 
-// Routes
-// Folder එකේ නම අනුව මෙතනත් මාරු වෙන්න ඕන (route ද routes ද කියලා)
+// Console Log එකක් දාමු Server එකට Request එනකොට පේන්න (Debug කරන්න ලේසියි)
+app.use((req, res, next) => {
+  console.log(`Request received: ${req.method} ${req.url}`);
+  next();
+});
+
+// --- Routes Mounting (මේ ටික හරියටම තියෙන්න ඕන) ---
 app.use('/api/auth', authRoutes);
 app.use('/api/books', bookRoutes);
-app.use('/api/borrow', borrowRoutes);
+app.use('/api/borrows', borrowRoutes); // <--- 2. මේ පේළිය නැත්නම් Borrow වැඩ කරන්නේ නෑ
 
-// Error Middleware
-app.use(notFound);
-app.use(errorHandler);
+const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
